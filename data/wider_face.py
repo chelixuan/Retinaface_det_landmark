@@ -42,11 +42,20 @@ class WiderFaceDetection(data.Dataset):
         height, width, _ = img.shape
 
         labels = self.words[index]
-        annotations = np.zeros((0, 15))
+        # original --------------------------------------------
+        # annotations = np.zeros((0, 15))
+        # clx -------------------------------------------------
+        annotations = np.zeros((0, 13))
+        # -----------------------------------------------------
         if len(labels) == 0:
             return annotations
         for idx, label in enumerate(labels):
-            annotation = np.zeros((1, 15))
+            # original -------------------------------------------------
+            # annotation = np.zeros((1, 15))
+            # clx ------------------------------------------------------
+            annotation = np.zeros((1, 13))
+            # ----------------------------------------------------------
+
             # bbox
             annotation[0, 0] = label[0]  # x1
             annotation[0, 1] = label[1]  # y1
@@ -62,12 +71,19 @@ class WiderFaceDetection(data.Dataset):
             annotation[0, 9] = label[11]   # l2_y
             annotation[0, 10] = label[13]  # l3_x
             annotation[0, 11] = label[14]  # l3_y
-            annotation[0, 12] = label[16]  # l4_x
-            annotation[0, 13] = label[17]  # l4_y
+            # original ----------------------------------------
+            # annotation[0, 12] = label[16]  # l4_x
+            # annotation[0, 13] = label[17]  # l4_y
+            # if (annotation[0, 4]<0):
+            #     annotation[0, 14] = -1
+            # else:
+            #     annotation[0, 14] = 1
+            # clx ---------------------------------------------
             if (annotation[0, 4]<0):
-                annotation[0, 14] = -1
+                annotation[0, 12] = -1
             else:
-                annotation[0, 14] = 1
+                annotation[0, 12] = 1
+            # -------------------------------------------------
 
             annotations = np.append(annotations, annotation, axis=0)
         target = np.array(annotations)

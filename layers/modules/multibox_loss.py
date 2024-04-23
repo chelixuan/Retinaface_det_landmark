@@ -61,14 +61,29 @@ class MultiBoxLoss(nn.Module):
 
         # match priors (default boxes) and ground truth boxes
         loc_t = torch.Tensor(num, num_priors, 4)
-        landm_t = torch.Tensor(num, num_priors, 10)
+        # original --------------------------------------------------
+        # landm_t = torch.Tensor(num, num_priors, 10)
+        # clx -------------------------------------------------------
+        landm_t = torch.Tensor(num, num_priors, 8)
+        # -----------------------------------------------------------
+
         conf_t = torch.LongTensor(num, num_priors)
         for idx in range(num):
             truths = targets[idx][:, :4].data
             labels = targets[idx][:, -1].data
-            landms = targets[idx][:, 4:14].data
+            # original ----------------------------------------------
+            # landms = targets[idx][:, 4:14].data
+            # clx ---------------------------------------------------
+            landms = targets[idx][:, 4:12].data
+            # -------------------------------------------------------
             defaults = priors.data
+
+            # original ----------------------------------------
             match(self.threshold, truths, defaults, self.variance, labels, landms, loc_t, conf_t, landm_t, idx)
+            # clx ---------------------------------------------
+            # loc_t, conf_t, landm_t = match(self.threshold, truths, defaults, self.variance, labels, landms, loc_t, conf_t, landm_t, idx)
+            # -------------------------------------------------
+
         if GPU:
             loc_t = loc_t.cuda()
             conf_t = conf_t.cuda()
@@ -81,10 +96,16 @@ class MultiBoxLoss(nn.Module):
         num_pos_landm = pos1.long().sum(1, keepdim=True)
         N1 = max(num_pos_landm.data.sum().float(), 1)
         pos_idx1 = pos1.unsqueeze(pos1.dim()).expand_as(landm_data)
-        landm_p = landm_data[pos_idx1].view(-1, 10)
-        landm_t = landm_t[pos_idx1].view(-1, 10)
-        loss_landm = F.smooth_l1_loss(landm_p, landm_t, reduction='sum')
+        
+        # original ---------------------------------------------------------
+        # landm_p = landm_data[pos_idx1].view(-1, 10)
+        # landm_t = landm_t[pos_idx1].view(-1, 10)
+        # clx --------------------------------------------------------------
+        landm_p = landm_data[pos_idx1].view(-1, 8)
+        landm_t = landm_t[pos_idx1].view(-1, 8)
+        # ------------------------------------------------------------------
 
+        loss_landm = F.smooth_l1_loss(landm_p, landm_t, reduction='sum')
 
         pos = conf_t != zeros
         conf_t[pos] = 1

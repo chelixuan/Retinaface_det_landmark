@@ -28,7 +28,11 @@ parser.add_argument('--save_folder', default='./weights/', help='Location to sav
 args = parser.parse_args()
 
 if not os.path.exists(args.save_folder):
-    os.mkdir(args.save_folder)
+    # os.mkdir(args.save_folder)
+    # clx ----------------------------------------------------------
+    os.makedirs(args.save_folder, exist_ok=True)
+    # --------------------------------------------------------------
+
 cfg = None
 if args.network == "mobile0.25":
     cfg = cfg_mnet
@@ -128,6 +132,7 @@ def train():
         # backprop
         optimizer.zero_grad()
         loss_l, loss_c, loss_landm = criterion(out, priors, targets)
+        
         loss = cfg['loc_weight'] * loss_l + loss_c + loss_landm
         loss.backward()
         optimizer.step()
