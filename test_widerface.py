@@ -65,6 +65,17 @@ def load_model(model, pretrained_path, load_to_cpu):
     model.load_state_dict(pretrained_dict, strict=False)
     return model
 
+# added by clx @20240424 --------------------------------------------------
+def find_images(root_path):
+    images = []
+    for root, dirs, files in os.walk(root_path):
+        for file in files:
+            if file[-4:] == '.jpg':
+                image_path = os.path.join(root, file)
+                images.append(image_path.split(root_path)[1])
+                
+    return images
+# -------------------------------------------------------------------------
 
 if __name__ == '__main__':
     torch.set_grad_enabled(False)
@@ -86,11 +97,18 @@ if __name__ == '__main__':
 
     # testing dataset
     testset_folder = args.dataset_folder
-    testset_list = args.dataset_folder[:-7] + "wider_val.txt"
+    # original -----------------------------------------------------------------
+    # testset_list = args.dataset_folder[:-7] + "wider_val.txt"
 
-    with open(testset_list, 'r') as fr:
-        test_dataset = fr.read().split()
+    # with open(testset_list, 'r') as fr:
+    #     test_dataset = fr.read().split()
+    # clx ----------------------------------------------------------------------
+    # test_dataset = [x for x in os.listdir(args.dataset_folder) if x[-4:] in ['jpg', 'png']]
+    test_dataset = find_images(args.dataset_folder)
+    # --------------------------------------------------------------------------
+
     num_images = len(test_dataset)
+    print(f'num_test_images = {num_images} \n')
 
     _t = {'forward_pass': Timer(), 'misc': Timer()}
 
@@ -107,6 +125,7 @@ if __name__ == '__main__':
         im_size_min = np.min(im_shape[0:2])
         im_size_max = np.max(im_shape[0:2])
         resize = float(target_size) / float(im_size_min)
+
         # prevent bigger axis from being more than max_size:
         if np.round(resize * im_size_max) > max_size:
             resize = float(max_size) / float(im_size_max)
@@ -136,9 +155,14 @@ if __name__ == '__main__':
         boxes = boxes.cpu().numpy()
         scores = conf.squeeze(0).data.cpu().numpy()[:, 1]
         landms = decode_landm(landms.data.squeeze(0), prior_data, cfg['variance'])
+        # original ------------------------------------------------------------------------
+        # scale1 = torch.Tensor([img.shape[3], img.shape[2], img.shape[3], img.shape[2],
+        #                        img.shape[3], img.shape[2], img.shape[3], img.shape[2],
+        #                        img.shape[3], img.shape[2]])
+        # clx -----------------------------------------------------------------------------
         scale1 = torch.Tensor([img.shape[3], img.shape[2], img.shape[3], img.shape[2],
-                               img.shape[3], img.shape[2], img.shape[3], img.shape[2],
-                               img.shape[3], img.shape[2]])
+                               img.shape[3], img.shape[2], img.shape[3], img.shape[2],])
+        # ---------------------------------------------------------------------------------
         scale1 = scale1.to(device)
         landms = landms * scale1 / resize
         landms = landms.cpu().numpy()
@@ -177,18 +201,29 @@ if __name__ == '__main__':
             os.makedirs(dirname)
         with open(save_name, "w") as fd:
             bboxs = dets
-            file_name = os.path.basename(save_name)[:-4] + "\n"
+            # file_name = os.path.basename(save_name)[:-4] + "\n"
             bboxs_num = str(len(bboxs)) + "\n"
-            fd.write(file_name)
-            fd.write(bboxs_num)
+            # fd.write(file_name)
+            # fd.write(bboxs_num)
             for box in bboxs:
+                # 480.5035     24.059538  503.2184     58.130867    0.9999999 
+                # 482.55032 59.293934  504.346      50.376987  502.77817    24.649662  480.97305
+                # 34.106663 
                 x = int(box[0])
                 y = int(box[1])
                 w = int(box[2]) - int(box[0])
                 h = int(box[3]) - int(box[1])
                 confidence = str(box[4])
-                line = str(x) + " " + str(y) + " " + str(w) + " " + str(h) + " " + confidence + " \n"
-                fd.write(line)
+                
+                point1_x, point1_y = box[5], box[6]
+                point2_x, point2_y = box[7], box[8]
+                point3_x, point3_y = box[9], box[10]
+                point4_x, point4_y = box[11], box[12]
+
+                line_box = str(x) + " " + str(y) + " " + str(w) + " " + str(h) + " " + confidence + " \n"
+                line_point = f'{point1_x} {point1_y} {point2_x} {point2_y} {point3_x} {point3_y} {point4_x} {point4_y} \n'
+                fd.write(line_box)
+                fd.write(line_point)
 
         print('im_detect: {:d}/{:d} forward_pass_time: {:.4f}s misc: {:.4f}s'.format(i + 1, num_images, _t['forward_pass'].average_time, _t['misc'].average_time))
 
@@ -199,21 +234,34 @@ if __name__ == '__main__':
                     continue
                 text = "{:.4f}".format(b[4])
                 b = list(map(int, b))
-                cv2.rectangle(img_raw, (b[0], b[1]), (b[2], b[3]), (0, 0, 255), 2)
+                # cv2.rectangle(img_raw, (b[0], b[1]), (b[2], b[3]), (0, 0, 255), 2)
                 cx = b[0]
                 cy = b[1] + 12
-                cv2.putText(img_raw, text, (cx, cy),
-                            cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255))
+                # cv2.putText(img_raw, text, (cx, cy),
+                #             cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255))
 
                 # landms
-                cv2.circle(img_raw, (b[5], b[6]), 1, (0, 0, 255), 4)
-                cv2.circle(img_raw, (b[7], b[8]), 1, (0, 255, 255), 4)
-                cv2.circle(img_raw, (b[9], b[10]), 1, (255, 0, 255), 4)
-                cv2.circle(img_raw, (b[11], b[12]), 1, (0, 255, 0), 4)
-                cv2.circle(img_raw, (b[13], b[14]), 1, (255, 0, 0), 4)
+                # cv2.circle(img_raw, (b[5], b[6]), 1, (0, 0, 255), -1)
+                # cv2.circle(img_raw, (b[7], b[8]), 1, (0, 255, 255), -1)
+                # cv2.circle(img_raw, (b[9], b[10]), 1, (255, 0, 255), -1)
+                # cv2.circle(img_raw, (b[11], b[12]), 1, (0, 255, 0), -1)
+                # cv2.circle(img_raw, (b[13], b[14]), 1, (255, 0, 0), 4)
+
+                cv2.circle(img_raw, (b[5], b[6]), 1, (0, 0, 255), -1)
+                cv2.circle(img_raw, (b[7], b[8]), 1, (0, 255, 255), -1)
+                cv2.circle(img_raw, (b[9], b[10]), 1, (255, 0, 255), -1)
+                cv2.circle(img_raw, (b[11], b[12]), 1, (0, 255, 0), -1)
+                
             # save image
-            if not os.path.exists("./results/"):
-                os.makedirs("./results/")
-            name = "./results/" + str(i) + ".jpg"
+            # original -------------------------------------------------------
+            # if not os.path.exists("./results/"):
+            #     os.makedirs("./results/")
+            # name = "./results/" + str(i) + ".jpg"
+            # clx ------------------------------------------------------------
+            vis_save_root = args.trained_model[:args.trained_model.rfind('/')+1] + 'vis_results_without_box/'
+            name = vis_save_root + img_name
+            save_vis_dirname = os.path.dirname(name)
+            os.makedirs(save_vis_dirname, exist_ok=True)
+            # ----------------------------------------------------------------
             cv2.imwrite(name, img_raw)
 
