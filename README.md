@@ -31,7 +31,7 @@ ps: root: custom data root path.
 
 ### label format
 ```Shell
-\# image_name
+# image_name
 bbox1_x1 bbox1_y1 bbox1_w bbox1_h point1_x point1_y point2_x point2_y point3_x point3_y point4_x point4_y
 bbox2_x1 bbox2_y1 bbox2_w bbox2_h point1_x point1_y point2_x point2_y point3_x point3_y point4_x point4_y 
 ...
@@ -72,7 +72,7 @@ python test_widerface.py \
 2. Evaluate landmark offset(use Euclidean distance ) 
 
 ```Shell
-\# change gt_txt_path and pred_txt_path
+# change gt_txt_path and pred_txt_path
 python landm_edc.py
 ```
 

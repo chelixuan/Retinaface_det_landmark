@@ -3,8 +3,8 @@ import math
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
-gt_root = '/home/wybj/chelx/dataset/M3_dataset/TAG/'
-pred_root = '/home/wybj/chelx/ckpt/QC_code/Retinaface/base_mobile0.25/test_txt/'
+gt_root = '/home/chelx/dataset/M3_dataset/TAG/'
+pred_root = '/home/chelx/ckpt/QC_code/Retinaface/base_mobile0.25/test_txt/'
 
 folders = ['01', '02', '08']
 
