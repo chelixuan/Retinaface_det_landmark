@@ -1,13 +1,10 @@
 import cv2
-import onnx
 import math
-import onnxruntime
 import numpy as np
 from itertools import product as product
 
-ONNX_PATH = './mobilenet0.25_Final_sim.onnx'
-IMAGE_PATH = './test.jpg'
-SAVE_RES = './res_onnx_test.jpg'
+from rknn.api import RKNN
+
 
 IMAGE_HEIGHT, IMAGE_WIDTH = 480, 640
 MEAN = (104, 117, 123)
@@ -17,6 +14,10 @@ VARIANCE = [0.1, 0.2]
 NMS_CONFIDENCE_THRESHOLD = 0.02
 NMS_THRESHOLD = 0.4
 VIS_SCORE_THRESHOLD = 0.5
+
+RKNN_MODEL = '/home/chelx/Retinaface_rknn/ckpt/mobilenet0.25_Final_sim_opt-0.rknn'
+IMG_PATH = './test.jpg'
+RES_PATH = './res_rknn_test.jpg'
 
 def decode(loc, priors, variances):
     boxes = np.concatenate((
@@ -92,20 +93,44 @@ def py_cpu_nms(dets, thresh):
 
     return keep
 
-def main(onnx_model, image_path, save_path):
-    ori_img = cv2.imread(image_path, cv2.IMREAD_COLOR)
+
+if __name__ == '__main__':
+
+    # Create RKNN object
+    rknn = RKNN(verbose=True, verbose_file='./clx_crypt.log')
+    ret = rknn.load_rknn(RKNN_MODEL)
+    if ret != 0:
+        print('load rknn model failed')
+        exit(ret)
+
+    # init runtime environment
+    ret = rknn.init_runtime(target = 'rk3566', device_id='0f51bb82820a2745')
+    if ret != 0:
+        print('Init runtime environment failed')
+        exit(ret)
+
+    # Set inputs
+    ori_img = cv2.imread(IMG_PATH, cv2.IMREAD_COLOR)
     orig_h, orig_w, _ = ori_img.shape
     img = cv2.resize(ori_img, (IMAGE_WIDTH, IMAGE_HEIGHT))
-    img = np.float32(img)
-    img -= MEAN
-    img = np.transpose(np.expand_dims(img, 0), (0, 3, 1, 2))
+    # img = np.float32(img)
+    # img -= MEAN
+    # img = np.transpose(np.expand_dims(img, 0), (0, 3, 1, 2))
+    img = np.expand_dims(img, 0)
+    loc, conf, landms = rknn.inference(inputs=[img])
 
-    ort_session = onnxruntime.InferenceSession(onnx_model, providers=['CPUExecutionProvider'])
-    ort_inputs = {ort_session.get_inputs()[0].name: img}
-    ort_output_names = [x.name for x in ort_session.get_outputs()] 
-    loc, conf, landms = ort_session.run(ort_output_names, ort_inputs)
+    print()
+    print('loc = ', loc)
+    print(loc.shape)
+    print()
+    print('conf = ', conf)
+    print(conf.shape)
+    print()
+    print('landms = ', landms)
+    print(landms.shape)
+    print()
 
-    # priorbox = PriorBox(image_size=(orig_h, orig_w))
+
     priorbox = PriorBox(image_size=(orig_h, orig_w))
     prior_data = priorbox.forward()
 
@@ -116,8 +141,6 @@ def main(onnx_model, image_path, save_path):
 
     scores = np.squeeze(conf)[:, 1]
     landms = decode_landm(np.squeeze(landms), prior_data, VARIANCE)
-    # scale1 = np.array([img.shape[3], img.shape[2], img.shape[3], img.shape[2],
-    #                    img.shape[3], img.shape[2], img.shape[3], img.shape[2],])
     scale1 = np.array([IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_HEIGHT,
                        IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_HEIGHT,])
     landms = landms * scale1 / resize
@@ -150,6 +173,11 @@ def main(onnx_model, image_path, save_path):
             continue
         text = "{:.4f}".format(b[4])
         b = list(map(int, b))
+        
+        print()
+        print('b = ', b)
+        print()
+
         cv2.rectangle(ori_img, (b[0], b[1]), (b[2], b[3]), (0, 180, 150), 1)
         cx = b[0]
         cy = b[1] + 12
@@ -162,8 +190,8 @@ def main(onnx_model, image_path, save_path):
         cv2.circle(ori_img, (b[11], b[12]), 2, (0, 255, 0), -1)
         
     # save image
-    cv2.imwrite(save_path, ori_img)
+    cv2.imwrite(RES_PATH, ori_img)
+
+    rknn.release()
 
 
-if __name__ == '__main__':
-    main(ONNX_PATH, IMAGE_PATH, SAVE_RES)
