@@ -206,9 +206,6 @@ if __name__ == '__main__':
             # fd.write(file_name)
             # fd.write(bboxs_num)
             for box in bboxs:
-                # 480.5035     24.059538  503.2184     58.130867    0.9999999 
-                # 482.55032 59.293934  504.346      50.376987  502.77817    24.649662  480.97305
-                # 34.106663 
                 x = int(box[0])
                 y = int(box[1])
                 w = int(box[2]) - int(box[0])
@@ -234,34 +231,22 @@ if __name__ == '__main__':
                     continue
                 text = "{:.4f}".format(b[4])
                 b = list(map(int, b))
-                # cv2.rectangle(img_raw, (b[0], b[1]), (b[2], b[3]), (0, 0, 255), 2)
+                cv2.rectangle(img_raw, (b[0], b[1]), (b[2], b[3]), (0, 180, 150), 1)
                 cx = b[0]
                 cy = b[1] + 12
-                # cv2.putText(img_raw, text, (cx, cy),
-                #             cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255))
+                cv2.putText(img_raw, text, (cx, cy),
+                            cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255))
 
                 # landms
-                # cv2.circle(img_raw, (b[5], b[6]), 1, (0, 0, 255), -1)
-                # cv2.circle(img_raw, (b[7], b[8]), 1, (0, 255, 255), -1)
-                # cv2.circle(img_raw, (b[9], b[10]), 1, (255, 0, 255), -1)
-                # cv2.circle(img_raw, (b[11], b[12]), 1, (0, 255, 0), -1)
-                # cv2.circle(img_raw, (b[13], b[14]), 1, (255, 0, 0), 4)
-
                 cv2.circle(img_raw, (b[5], b[6]), 1, (0, 0, 255), -1)
-                cv2.circle(img_raw, (b[7], b[8]), 1, (0, 255, 255), -1)
+                cv2.circle(img_raw, (b[7], b[8]), 1, (255, 0, 255), -1)
                 cv2.circle(img_raw, (b[9], b[10]), 1, (255, 0, 255), -1)
                 cv2.circle(img_raw, (b[11], b[12]), 1, (0, 255, 0), -1)
                 
             # save image
-            # original -------------------------------------------------------
-            # if not os.path.exists("./results/"):
-            #     os.makedirs("./results/")
-            # name = "./results/" + str(i) + ".jpg"
-            # clx ------------------------------------------------------------
             vis_save_root = args.trained_model[:args.trained_model.rfind('/')+1] + 'vis_results_without_box/'
             name = vis_save_root + img_name
             save_vis_dirname = os.path.dirname(name)
             os.makedirs(save_vis_dirname, exist_ok=True)
-            # ----------------------------------------------------------------
             cv2.imwrite(name, img_raw)
 

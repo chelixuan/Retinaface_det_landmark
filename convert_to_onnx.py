@@ -1,25 +1,19 @@
-from __future__ import print_function
-import os
-import argparse
 import torch
-import torch.backends.cudnn as cudnn
-import numpy as np
+import argparse
+from __future__ import print_function
+
 from data import cfg_mnet, cfg_re50
-from layers.functions.prior_box import PriorBox
-from utils.nms.py_cpu_nms import py_cpu_nms
-import cv2
 from models.retinaface import RetinaFace
-from utils.box_utils import decode, decode_landm
-from utils.timer import Timer
 
 
 parser = argparse.ArgumentParser(description='Test')
-parser.add_argument('-m', '--trained_model', default='./weights/mobilenet0.25_Final.pth',
+parser.add_argument('--trained_model', default='./weights/mobilenet0.25_Final.pth',
                     type=str, help='Trained state_dict file path to open')
 parser.add_argument('--network', default='mobile0.25', help='Backbone network mobile0.25 or resnet50')
-parser.add_argument('--long_side', default=640, help='when origin_size is false, long_side is scaled size(320 or 640 for long side)')
+parser.add_argument('--long_side', default=640, type=int, help='when origin_size is false, long_side is scaled size(320 or 640 for long side)')
+parser.add_argument('--short_side', default=480, type=int, help='when origin_size is false, short_side is scaled size(320 or 640 for long side)')
 parser.add_argument('--cpu', action="store_true", default=True, help='Use cpu inference')
-
+parser.add_argument('--opset', default=11, help='onnx opset version')
 args = parser.parse_args()
 
 
@@ -76,13 +70,19 @@ if __name__ == '__main__':
     net = net.to(device)
 
     # ------------------------ export -----------------------------
-    output_onnx = 'FaceDetector.onnx'
+    output_onnx = args.trained_model[:args.trained_model.rfind('.')] + '.onnx' 
     print("==> Exporting model to ONNX format at '{}'".format(output_onnx))
-    input_names = ["input0"]
-    output_names = ["output0"]
-    inputs = torch.randn(1, 3, args.long_side, args.long_side).to(device)
+    input_names = ["image"]
+    output_names = ["box", "class", "landm"]
+    inputs = torch.zeros(1, 3, args.short_side, args.long_side).to(device)
 
-    torch_out = torch.onnx._export(net, inputs, output_onnx, export_params=True, verbose=False,
-                                   input_names=input_names, output_names=output_names)
+    torch.onnx.export(
+        net,
+        inputs,
+        output_onnx,
+        opset_version = args.opset,
+        input_names = input_names,
+        output_names = output_names
+    )
 
 

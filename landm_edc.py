@@ -36,9 +36,6 @@ for i in range(len(folders)):
         pred_info = pred_info.split('\n')
         if len(pred_info) <=1 :
             continue
-        # if len(pred_info) > 3:
-        #     print(len(pred_info))
-        #     exit()
         pred_points = pred_info[1].strip().split(' ')
 
         pred_p1_x, pred_p1_y = float(pred_points[0]), float(pred_points[1])
@@ -46,30 +43,13 @@ for i in range(len(folders)):
         pred_p3_x, pred_p3_y = float(pred_points[4]), float(pred_points[5])
         pred_p4_x, pred_p4_y = float(pred_points[6]), float(pred_points[7])
 
-        # print('-'*80)
-        # print('gt vs pred :')
-        # print(f'point1 : {(gt_p1_x, gt_p1_y)}  {(pred_p1_x, pred_p1_y)}')
-        # print(f'point2 : {(gt_p2_x, gt_p2_y)}  {(pred_p2_x, pred_p2_y)}')
-        # print(f'point3 : {(gt_p3_x, gt_p3_y)}  {(pred_p3_x, pred_p3_y)}')
-        # print(f'point4 : {(gt_p4_x, gt_p4_y)}  {(pred_p4_x, pred_p4_y)}')
-        # print()
-
         edc_dis_1 = eucliDist((gt_p1_x, gt_p1_y), (pred_p1_x, pred_p1_y))
         edc_dis_2 = eucliDist((gt_p2_x, gt_p2_y), (pred_p2_x, pred_p2_y))
         edc_dis_3 = eucliDist((gt_p3_x, gt_p3_y), (pred_p3_x, pred_p3_y))
         edc_dis_4 = eucliDist((gt_p4_x, gt_p4_y), (pred_p4_x, pred_p4_y))
 
-        # print('edc_dis_1 = ', edc_dis_1)
-        # print('edc_dis_2 = ', edc_dis_2)
-        # print('edc_dis_3 = ', edc_dis_3)
-        # print('edc_dis_4 = ', edc_dis_4)
-        # print()
-
         mean_edc_dis = (edc_dis_1 + edc_dis_2 + edc_dis_3 + edc_dis_4) / 4
         max_edc_dis = max(edc_dis_1,  edc_dis_2, edc_dis_3, edc_dis_4)
-        print('mean_edc_dis = ', round(mean_edc_dis, 3))
-        print('max_edc_dis = ', round(max_edc_dis, 3))
-        print()
 
         # mean_edc.append(mean_edc_dis)
         # max_edc.append(max_edc_dis)
@@ -79,7 +59,6 @@ for i in range(len(folders)):
         else:
             mean_edc.append(mean_edc_dis)
             max_edc.append(max_edc_dis)
-        # exit()
 
 assert len(mean_edc) == len(max_edc), "please check edc collect process"
 x = list(range(0, len(mean_edc)))
