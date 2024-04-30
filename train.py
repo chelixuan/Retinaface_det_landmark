@@ -5,7 +5,8 @@ import torch.optim as optim
 import torch.backends.cudnn as cudnn
 import argparse
 import torch.utils.data as data
-from data import WiderFaceDetection, detection_collate, preproc, cfg_mnet, cfg_re50
+# from data import WiderFaceDetection, detection_collate, preproc, cfg_mnet, cfg_re50
+from data import WiderFaceDetection, detection_collate, preproc, cfg_mnet, cfg_re50, cfg_mnetx2
 from layers.modules import MultiBoxLoss
 from layers.functions.prior_box import PriorBox
 import time
@@ -36,6 +37,8 @@ if not os.path.exists(args.save_folder):
 cfg = None
 if args.network == "mobile0.25":
     cfg = cfg_mnet
+elif args.network == "mobile0.5":
+    cfg = cfg_mnetx2
 elif args.network == "resnet50":
     cfg = cfg_re50
 

@@ -135,3 +135,38 @@ class MobileNetV1(nn.Module):
         x = self.fc(x)
         return x
 
+class MobileNetV1_05(nn.Module):
+    def __init__(self):
+        super(MobileNetV1_05, self).__init__()
+        self.stage1 = nn.Sequential(
+            conv_bn(3, 16, 2, leaky = 0.1),    # 3
+            conv_dw(16, 32, 1),   # 7
+            conv_dw(32, 64, 2),  # 11
+            conv_dw(64, 64, 1),  # 19
+            conv_dw(64, 128, 2),  # 27
+            conv_dw(128, 128, 1),  # 43
+        )
+        self.stage2 = nn.Sequential(
+            conv_dw(128, 256, 2),  # 43 + 16 = 59
+            conv_dw(256, 256, 1), # 59 + 32 = 91
+            conv_dw(256, 256, 1), # 91 + 32 = 123
+            conv_dw(256, 256, 1), # 123 + 32 = 155
+            conv_dw(256, 256, 1), # 155 + 32 = 187
+            conv_dw(256, 256, 1), # 187 + 32 = 219
+        )
+        self.stage3 = nn.Sequential(
+            conv_dw(256, 512, 2), # 219 +3 2 = 241
+            conv_dw(512, 512, 1), # 241 + 64 = 301
+        )
+        self.avg = nn.AdaptiveAvgPool2d((1,1))
+        self.fc = nn.Linear(512, 1000)
+
+    def forward(self, x):
+        x = self.stage1(x)
+        x = self.stage2(x)
+        x = self.stage3(x)
+        x = self.avg(x)
+        # x = self.model(x)
+        x = x.view(-1, 512)
+        x = self.fc(x)
+        return x

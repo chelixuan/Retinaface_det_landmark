@@ -193,10 +193,10 @@ class MultiBoxLoss(nn.Module):
         targets_weighted = conf_t[(pos+neg).gt(0)]
 
         # original --------------------------------------------------------------
-        # loss_c = F.cross_entropy(conf_p, targets_weighted, reduction='sum')
+        loss_c = F.cross_entropy(conf_p, targets_weighted, reduction='sum')
         # clx -FocalLOSS---------------------------------------------------------
-        focal = FocalLoss(size_average=False)
-        loss_c = focal.forward(conf_p, targets_weighted)
+        # focal = FocalLoss(size_average=False)
+        # loss_c = focal.forward(conf_p, targets_weighted)
         # -----------------------------------------------------------------------
 
         # Sum of losses: L(x,c,l,g) = (Lconf(x, c) + αLloc(x,l,g)) / N
